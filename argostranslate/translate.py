@@ -164,12 +164,7 @@ class PackageTranslation(ITranslation):
 
         Sentencizer = None
         if settings.chunk_type in [settings.ChunkType.ARGOSTRANSLATE, settings.ChunkType.DEFAULT]:
-            if "stanza" in str(pkg.packaged_sbd_path):
-                Sentencizer = StanzaSentencizer
-            elif "minisbd" in str(pkg.packaged_sbd_path):
-                Sentencizer = MiniSBDSentencizer
-            else:
-                Sentencizer = MiniSBDSentencizer # Default to MiniSBD if no stanza model is available
+            Sentencizer = MiniSBDSentencizer # Default to MiniSBD
         elif settings.chunk_type == settings.ChunkType.STANZA:
             Sentencizer = StanzaSentencizer
         elif settings.chunk_type == settings.ChunkType.MINISBD:
@@ -452,46 +447,6 @@ def apply_packaged_translation(
     # Sentence boundary detection
     sentences = sentencizer.split_sentences(input_text)
     info("sentences", sentences)
-    """
-    # Argos Translate 1.9 Sentence Boundary Detection (legacy)
-    if pkg.type == "sbd":
-        sentences = [input_text]
-    elif settings.stanza_available:
-        # PJDEBUG
-        stanza_pipeline = stanza.Pipeline(
-            lang=pkg.from_code,
-            dir=str(pkg.package_path / "stanza"),
-            processors="tokenize",
-            use_gpu=settings.device == "cuda",
-            logging_level="WARNING",
-        )
-        stanza_sbd = stanza_pipeline(input_text)
-        sentences = [sentence.text for sentence in stanza_sbd.sentences]
-    else:
-        DEFAULT_SENTENCE_LENGTH = 250
-        sentences = []
-        start_index = 0
-
-        # Get sbd translation
-        sbd_package = sbd.get_sbd_package()
-        assert sbd_package is not None
-        sbd_translation = PackageTranslation(None, None, sbd_package)
-
-        while start_index < len(input_text) - 1:
-            detected_sentence_index = sbd.detect_sentence(
-                input_text[start_index:], sbd_translation
-            )
-            if detected_sentence_index == -1:
-                # Couldn't find sentence boundary
-                sbd_index = start_index + DEFAULT_SENTENCE_LENGTH
-            else:
-                sbd_index = start_index + detected_sentence_index
-            sentences.append(input_text[start_index:sbd_index])
-            info("start_index", start_index)
-            info("sbd_index", sbd_index)
-            info(input_text[start_index:sbd_index])
-            start_index = sbd_index
-    """
 
     # Tokenization
     tokenized = [pkg.tokenizer.encode(sentence) for sentence in sentences]
@@ -563,18 +518,7 @@ def get_installed_languages() -> list[Language]:
 
     if settings.model_provider == settings.ModelProvider.OPENNMT:
         packages = package.get_installed_packages()
-        """
-        # Legacy sbd package search (environment-dependant)
-        # If stanza not available filter for sbd available
-        if not settings.stanza_available:
-            sbd_packages = list(filter(lambda x: x.type == "sbd", packages))
-            sbd_available_codes = set()
-            for sbd_package in sbd_packages:
-                sbd_available_codes = sbd_available_codes.union(sbd_package.from_codes)
-            packages = list(
-                filter(lambda x: x.from_code in sbd_available_codes, packages)
-            )
-        """
+
         # Filter for translate packages
         packages = list(filter(lambda x: x.type == "translate", packages))
 

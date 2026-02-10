@@ -9,7 +9,11 @@ try:
 except ImportError:
     spacy = None
 
-import stanza
+try:
+    import stanza
+except ImportError:
+    stanza = None
+
 from minisbd import SBDetect, models as minisbd_models
 
 from argostranslate import package, settings
@@ -138,6 +142,9 @@ class StanzaSentencizer(ISentenceBoundaryDetectionModel):
 
     def __init__(self, pkg: Package):
         self.pkg = pkg
+        if stanza is None:
+            raise RuntimeError("Stanza is not installed. Install stanza or change ChunkType settings")
+
         self.stanza_lang_code = self.LANGUAGE_CODE_MAPPING.get(
             pkg.from_code, pkg.from_code
         )
