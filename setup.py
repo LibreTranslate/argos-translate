@@ -7,7 +7,7 @@ with open("README.md") as f:
     long_description = f.read()
 
 setup(
-    name="argostranslate",
+    name="argos-translate-lt",
     version="1.12.1",
     description="Open-source neural machine translation library based on OpenNMT's CTranslate2",
     long_description=long_description,
